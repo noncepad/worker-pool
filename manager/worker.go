@@ -27,8 +27,10 @@ func (in *internal[T, S]) on_worker(w pool.Worker[T, S], signalC <-chan error, d
 }
 
 type jobRequest[T, S any] struct {
-	job   pool.Job[T]
-	respC chan<- pool.Result[S]
+	sendOnlyError bool
+	job           pool.Job[T]
+	respC         chan<- pool.Result[S]
+	errorC        chan<- error
 }
 
 func loopWorkerListen[T, S any](
@@ -59,11 +61,22 @@ out:
 			jobCount++
 			log.Debugf("worker %d recieved job %d", id, jobCount)
 			result, err := w.Run(x.job)
-			if err != nil {
-				x.respC <- pool.ResultFromError[S](err)
+			if x.sendOnlyError {
+				if err != nil {
+					select {
+					case <-doneC:
+					case x.errorC <- err:
+					}
+				}
 			} else {
-				x.respC <- pool.CreateResult[S](result)
+				if err != nil {
+					x.respC <- pool.ResultFromError[S](err)
+				} else {
+					x.respC <- pool.CreateResult[S](result)
+				}
+
 			}
+
 		}
 	}
 	go w.Close()

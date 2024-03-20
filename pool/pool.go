@@ -15,6 +15,8 @@ type Manager[T, S any] interface {
 	Add(Worker[T, S]) error
 	// submit a payload to be done
 	Submit(context.Context, T) (S, error)
+	// only send an error if there is an error
+	DetachSubmit(context.Context, T, int, chan<- error)
 }
 
 type DetachSubmitResult[S any] struct {

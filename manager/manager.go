@@ -59,6 +59,23 @@ func (e1 external[T, S]) CloseSignal() <-chan error {
 	return signalC
 }
 
+func (e1 external[T, S]) DetachSubmit(
+	ctx context.Context,
+	payload T,
+	id int,
+	errorC chan<- error,
+) {
+
+	doneC := e1.ctx.Done()
+	cancel, job := pool.CreateJob[T](ctx, payload)
+	defer cancel()
+	select {
+	case <-doneC:
+		return
+	case e1.jobC <- jobRequest[T, S]{sendOnlyError: true, job: job, errorC: errorC}:
+	}
+}
+
 func (e1 external[T, S]) Submit(ctx context.Context, payload T) (result S, err error) {
 	doneC := e1.ctx.Done()
 	respC := make(chan pool.Result[S], 1)
@@ -68,7 +85,7 @@ func (e1 external[T, S]) Submit(ctx context.Context, payload T) (result S, err e
 	case <-doneC:
 		err = e1.ctx.Err()
 		return
-	case e1.jobC <- jobRequest[T, S]{job: job, respC: respC}:
+	case e1.jobC <- jobRequest[T, S]{sendOnlyError: false, job: job, respC: respC}:
 	}
 	var resp pool.Result[S]
 	select {
