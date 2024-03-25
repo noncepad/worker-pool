@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "github.com/noncepad/worker-pool/proto/solpipe";
+
+package solpipe;
+
+message Empty {
+    
+}
+
+message CapacityResponse {
+    float64 capacity = 1;
+}
+
+service WorkerStatus {
+    rpc OnStatus(Empty) returns (stream CapacityRepsonse); 
+}
+
+
+
+
