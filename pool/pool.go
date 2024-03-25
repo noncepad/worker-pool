@@ -25,20 +25,6 @@ type DetachSubmitResult[S any] struct {
 	Id     int
 }
 
-// use this to detach to a separate Go routine
-func DetachSubmit[T, S any](m Manager[T, S], ctx context.Context, id int, payload T, ansC chan<- DetachSubmitResult[S]) {
-	doneC := ctx.Done()
-	r, err := m.Submit(ctx, payload)
-	select {
-	case <-doneC:
-	case ansC <- DetachSubmitResult[S]{
-		Id:     id,
-		Result: r,
-		Err:    err,
-	}:
-	}
-}
-
 type Worker[T, S any] interface {
 	Base
 	Run(Job[T]) (S, error)

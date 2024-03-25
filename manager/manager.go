@@ -12,6 +12,14 @@ type external[T, S any] struct {
 	internalC chan<- func(*internal[T, S])
 	deleteC   chan<- deleteWorker
 	jobC      chan<- jobRequest[T, S]
+	hook      JobHook
+}
+
+type JobHook interface {
+	JobStart()
+	JobFinish()
+	AddWorker()
+	RemoveWorker()
 }
 
 type deleteWorker struct {
@@ -21,6 +29,7 @@ type deleteWorker struct {
 func Create[T, S any](
 	parentCtx context.Context,
 	bufferSize int,
+	hook JobHook,
 ) (pool.Manager[T, S], error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	internalC := make(chan func(*internal[T, S]), 10)
