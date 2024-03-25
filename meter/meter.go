@@ -16,6 +16,27 @@ type Hook struct {
 	m            *sync.Mutex
 }
 
+func (h *Hook) calculateCapacity() float32 {
+	h.m.Lock()
+	a := h.busyWorkers
+	b := h.totalWorkers
+	h.m.Unlock()
+
+	capacity := float32(a) / float32(b)
+
+	if b == 0 {
+		return 1
+	}
+
+	if a < 0 || b < 0 {
+		return 1
+	}
+	if b < a {
+		return 1
+	}
+	return capacity
+}
+
 func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.WorkerStatus_OnStatusServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
@@ -31,9 +52,7 @@ func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.WorkerStatus_OnStatusServer) 
 			return nil
 		case <-ticker.C:
 			// Send a response
-			h.m.Lock()
-			capacity := float32(h.busyWorkers) / float32(h.totalWorkers)
-			h.m.Unlock()
+			capacity := h.calculateCapacity()
 			if err := stream.Send(&pbt.CapacityResponse{Capacity: capacity}); err != nil {
 				return err
 			}
