@@ -1,19 +1,32 @@
 package meter
 
-import "sync"
+import (
+	"sync"
+
+	pbt "github.com/noncepad/worker-pool/proto/solpipe"
+	"google.golang.org/grpc"
+)
 
 type Hook struct {
+	pbt.UnimplementedWorkerStatusServer
 	busyWorkers  int
 	totalWorkers int
 	m            *sync.Mutex
 }
 
-func Create() *Hook {
-	return &Hook{
+func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.WorkerStatus_OnStatusServer) error {
+	return nil
+}
+
+func Create(s *grpc.Server) *Hook {
+
+	hook := &Hook{
 		busyWorkers:  0,
 		totalWorkers: 0,
 		m:            &sync.Mutex{},
 	}
+	pbt.RegisterWorkerStatusServer(s, hook)
+	return hook
 }
 
 func (hook *Hook) JobStart() {

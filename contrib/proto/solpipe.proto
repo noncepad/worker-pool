@@ -9,11 +9,11 @@ message Empty {
 }
 
 message CapacityResponse {
-    float64 capacity = 1;
+    float capacity = 1;
 }
 
 service WorkerStatus {
-    rpc OnStatus(Empty) returns (stream CapacityRepsonse); 
+    rpc OnStatus(Empty) returns (stream CapacityResponse); 
 }
 
 
