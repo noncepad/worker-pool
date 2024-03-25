@@ -8,12 +8,14 @@ import (
 	"github.com/noncepad/worker-pool/meter"
 	"github.com/noncepad/worker-pool/pool"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 func TestBasic(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	h := meter.Create()
+	s := grpc.NewServer()
+	h := meter.Create(s)
 	mgr, err := manager.Create[int, int](ctx, 1, h)
 	if err != nil {
 		t.Fatal(err)

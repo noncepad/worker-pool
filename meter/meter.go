@@ -1,7 +1,9 @@
 package meter
 
 import (
+	"context"
 	"sync"
+	"time"
 
 	pbt "github.com/noncepad/worker-pool/proto/solpipe"
 	"google.golang.org/grpc"
@@ -15,9 +17,27 @@ type Hook struct {
 }
 
 func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.WorkerStatus_OnStatusServer) error {
-	return nil
-}
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
 
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	// Loop to send a response every time the ticker ticks
+	for {
+		select {
+		case <-ctx.Done():
+			// stream closed
+			return nil
+		case <-ticker.C:
+			// Send a response
+			capacity := float32(h.busyWorkers) / float32(h.totalWorkers)
+			if err := stream.Send(&pbt.CapacityResponse{Capacity: capacity}); err != nil {
+				return err
+			}
+		}
+	}
+}
 func Create(s *grpc.Server) *Hook {
 
 	hook := &Hook{
