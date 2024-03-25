@@ -8,7 +8,7 @@ This package consists of several components:
 
 - `manager`: Manages the creation and lifecycle of workers, as well as job distribution.
 - `pool`: Provides interfaces for managing workers and submitting jobs.
-- `meter`: Implements tracking the status of workers.
+- `meter`: Implements tracking the status of workers and streams worker capacity updates using gRPC.
 
 ## Components
 
@@ -39,11 +39,15 @@ The `worker` package defines the behavior of individual workers within the worke
 
 ### meter.go
 
-The `meter` package is for tracking the status of workers. Here's how worker tracking is implemented:
+The `meter` package is for tracking the status of workers. Here's how worker tracking is implemented and integrates `solpipe.proto`:
 
 - **Hooks**: The `Hook` struct tracks the number of busy and idle workers.
 - **Concurrency Control**: Concurrency is managed using a mutex to safely update worker status counters.
 - **Hook Usage**: Hooks are used within the manager to track worker activity, such as when a worker starts or finishes processing a job.
+- **Integration with Protobuf**: The `meter` package implements the `WorkerStatus` service defined in `solpipe.proto`. This service allows clients to stream capacity updates from the worker pool.
+- **Streaming Capacity Updates**: The `OnStatus` method in the `Hook` struct streams capacity responses to clients at 30 second intervals. Clients can connect to this service and receive updates on the current capacity of the worker pool.
+- **Concurrency Control**: Concurrency is managed using mutexes to safely update worker status counters and stream capacity updates.
+
 
 ## Usage
 
@@ -53,3 +57,4 @@ To use the Worker Pool Manager, import into your Go project and utilize the prov
 import (
     "github.com/noncepad/worker-pool"
 )
+
