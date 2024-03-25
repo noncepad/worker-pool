@@ -31,7 +31,9 @@ func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.WorkerStatus_OnStatusServer) 
 			return nil
 		case <-ticker.C:
 			// Send a response
+			h.m.Lock()
 			capacity := float32(h.busyWorkers) / float32(h.totalWorkers)
+			h.m.Unlock()
 			if err := stream.Send(&pbt.CapacityResponse{Capacity: capacity}); err != nil {
 				return err
 			}
@@ -49,27 +51,26 @@ func Create(s *grpc.Server) *Hook {
 	return hook
 }
 
-func (hook *Hook) JobStart() {
-	hook.m.Lock()
-	defer hook.m.Unlock()
-	hook.busyWorkers++
+func (h *Hook) JobStart() {
+	h.m.Lock()
+	defer h.m.Unlock()
+	h.busyWorkers++
 }
 
-func (hook *Hook) JobFinish() {
-	hook.m.Lock()
-	defer hook.m.Unlock()
-	hook.busyWorkers--
+func (h *Hook) JobFinish() {
+	h.m.Lock()
+	defer h.m.Unlock()
+	h.busyWorkers--
 }
 
-func (hook *Hook) AddWorker() {
-	hook.m.Lock()
-	defer hook.m.Unlock()
-	hook.totalWorkers++
+func (h *Hook) AddWorker() {
+	h.m.Lock()
+	defer h.m.Unlock()
+	h.totalWorkers++
 }
 
-func (hook *Hook) RemoveWorker() {
-	hook.m.Lock()
-	defer hook.m.Unlock()
-	hook.totalWorkers--
-
+func (h *Hook) RemoveWorker() {
+	h.m.Lock()
+	defer h.m.Unlock()
+	h.totalWorkers--
 }
