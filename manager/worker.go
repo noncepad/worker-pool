@@ -14,16 +14,16 @@ func (e1 external[T, S]) Add(w pool.Worker[T, S]) error {
 	case <-e1.ctx.Done():
 		return e1.ctx.Err()
 	case e1.internalC <- func(in *internal[T, S]) {
-		in.on_worker(w, signalC, deleteC)
+		in.on_worker(w, signalC, deleteC, e1.hook)
 	}:
 		return nil
 	}
 }
-func (in *internal[T, S]) on_worker(w pool.Worker[T, S], signalC <-chan error, deleteC chan<- deleteWorker) {
+func (in *internal[T, S]) on_worker(w pool.Worker[T, S], signalC <-chan error, deleteC chan<- deleteWorker, hook JobHook) {
 	in.workerIndex++
 	id := in.workerIndex
 	in.pool[id] = w
-	go loopWorkerListen[T, S](in.ctx, in.jobC, deleteC, w, id)
+	go loopWorkerListen[T, S](in.ctx, in.jobC, deleteC, signalC, w, id, hook)
 }
 
 type jobRequest[T, S any] struct {
@@ -37,11 +37,13 @@ func loopWorkerListen[T, S any](
 	ctx context.Context,
 	jobC <-chan jobRequest[T, S],
 	deleteC chan<- deleteWorker,
+	signalC <-chan error,
 	w pool.Worker[T, S],
 	id int,
+	hook JobHook,
 ) {
 	log.Debugf("working %d listening for jobs", id)
-	signalC := w.CloseSignal()
+
 	doneC := ctx.Done()
 
 	jobCount := 0
@@ -61,7 +63,11 @@ out:
 		case x := <-jobC:
 			jobCount++
 			log.Debugf("worker %d - 1 - recieved job %d", id, jobCount)
+			// Add hook 1: Worker takes a job (becomes busy)
+			hook.JobStart()
 			result, err := w.Run(x.job)
+			// Add hook 2: Worker takes a job (becomes idle)
+			hook.JobFinish()
 			if x.sendOnlyError {
 				if err != nil {
 					log.Debugf("worker %d - 2 - recieved job %d", id, jobCount)
