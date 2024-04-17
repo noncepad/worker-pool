@@ -43,13 +43,12 @@ func loopWorkerListen[T, S any](
 	hook JobHook,
 ) {
 	log.Debugf("working %d listening for jobs", id)
-
 	doneC := ctx.Done()
 
 	jobCount := 0
 out:
 	for {
-		log.Debugf("worker %d - 0 - recieved job %d", id, jobCount)
+		//log.Debugf("worker %d - 0 - recieved job %d", id, jobCount)
 		select {
 		case <-doneC:
 			break out
@@ -62,7 +61,7 @@ out:
 			break out
 		case x := <-jobC:
 			jobCount++
-			log.Debugf("worker %d - 1 - recieved job %d", id, jobCount)
+			//log.Debugf("worker %d - 1 - recieved job %d", id, jobCount)
 			// Add hook 1: Worker takes a job (becomes busy)
 			hook.JobStart()
 			result, err := w.Run(x.job)
@@ -70,24 +69,22 @@ out:
 			hook.JobFinish()
 			if x.sendOnlyError {
 				if err != nil {
-					log.Debugf("worker %d - 2 - recieved job %d", id, jobCount)
+					//log.Debugf("worker %d - 2 - recieved job %d", id, jobCount)
 					select {
 					case <-doneC:
 					case x.errorC <- err:
-						log.Debugf("worker %d - 3 - recieved job %d", id, jobCount)
+						//log.Debugf("worker %d - 3 - recieved job %d", id, jobCount)
 					}
-				} else {
-					log.Debugf("worker %d - 4 - recieved job %d", id, jobCount)
 				}
 			} else {
 				if err != nil {
-					log.Debugf("worker %d - 5 - recieved job %d", id, jobCount)
+					//log.Debugf("worker %d - 5 - recieved job %d", id, jobCount)
 					x.respC <- pool.ResultFromError[S](err)
 				} else {
-					log.Debugf("worker %d - 6 - recieved job %d", id, jobCount)
+					//log.Debugf("worker %d - 6 - recieved job %d", id, jobCount)
 					x.respC <- pool.CreateResult[S](result)
 				}
-				log.Debugf("worker %d - 7 - recieved job %d", id, jobCount)
+				//log.Debugf("worker %d - 7 - recieved job %d", id, jobCount)
 
 			}
 
