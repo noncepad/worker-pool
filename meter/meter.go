@@ -5,12 +5,12 @@ import (
 	"sync"
 	"time"
 
-	pbt "github.com/noncepad/worker-pool/proto/solpipe"
+	pbt "github.com/noncepad/solpipe-market/go/proto/relay"
 	"google.golang.org/grpc"
 )
 
 type Hook struct {
-	pbt.UnimplementedWorkerStatusServer
+	pbt.UnimplementedCapacityServer
 	busyWorkers  int
 	totalWorkers int
 	m            *sync.Mutex
@@ -37,7 +37,7 @@ func (h *Hook) calculateCapacity() float32 {
 	return capacity
 }
 
-func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.WorkerStatus_OnStatusServer) error {
+func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.Capacity_OnStatusServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
@@ -53,7 +53,12 @@ func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.WorkerStatus_OnStatusServer) 
 		case <-ticker.C:
 			// Send a response
 			capacity := h.calculateCapacity()
-			if err := stream.Send(&pbt.CapacityResponse{Capacity: capacity}); err != nil {
+			if 1 < capacity {
+				capacity = 1
+			} else if capacity < 0 {
+				capacity = 0
+			}
+			if err := stream.Send(&pbt.CapacityStatus{UtilizationRatio: capacity}); err != nil {
 				return err
 			}
 		}
@@ -66,7 +71,7 @@ func Create(s *grpc.Server) *Hook {
 		totalWorkers: 0,
 		m:            &sync.Mutex{},
 	}
-	pbt.RegisterWorkerStatusServer(s, hook)
+	pbt.RegisterCapacityServer(s, hook)
 	return hook
 }
 
