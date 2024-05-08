@@ -10,6 +10,7 @@ import (
 func (e1 external[T, S]) Add(w pool.Worker[T, S]) error {
 	deleteC := e1.deleteC
 	signalC := w.CloseSignal()
+
 	select {
 	case <-e1.ctx.Done():
 		return e1.ctx.Err()
@@ -23,6 +24,7 @@ func (in *internal[T, S]) on_worker(w pool.Worker[T, S], signalC <-chan error, d
 	in.workerIndex++
 	id := in.workerIndex
 	in.pool[id] = w
+	in.hook.WorkerAdd()
 	go loopWorkerListen[T, S](in.ctx, in.jobC, deleteC, signalC, w, id, hook)
 }
 

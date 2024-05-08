@@ -6,6 +6,7 @@ import (
 	"time"
 
 	pbt "github.com/noncepad/solpipe-market/go/proto/relay"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -35,7 +36,7 @@ func (h *Hook) unsafeCalculateCapacity() float32 {
 
 	a := h.busyWorkers
 	b := h.totalWorkers
-
+	log.Infof("busy/total workers: %d/%d", a, b)
 	capacity := float32(a) / float32(b)
 
 	if b == 0 {
@@ -136,12 +137,14 @@ func (h *Hook) WorkerAdd() {
 	defer h.m.Unlock()
 	h.totalWorkers++
 	h.unsafeCapacityUpdate()
+	log.Infof("adding a worker; now have %d workers", h.totalWorkers)
 }
 
 func (h *Hook) WorkerRemove() {
 	h.m.Lock()
 	defer h.m.Unlock()
 	h.totalWorkers--
+	log.Infof("removing a worker; now have %d workers", h.totalWorkers)
 	h.unsafeCapacityUpdate()
 }
 

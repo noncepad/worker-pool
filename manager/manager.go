@@ -41,6 +41,7 @@ func Create[T, S any](
 	go loopInternal[T, S](
 		ctx,
 		cancel,
+		hook,
 		internalC,
 		deleteC,
 		jobC,
