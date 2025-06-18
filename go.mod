@@ -9,9 +9,9 @@ require (
 )
 
 require (
-	github.com/noncepad/solpipe-market v0.0.0-20240506122311-68facbc22c9a // indirect
+	github.com/noncepad/solpipe-market v0.0.0-20250608035132-e386796a8fc1 // indirect
 	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
 )

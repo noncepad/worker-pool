@@ -33,7 +33,6 @@ func (h *Hook) calculateCapacity() float32 {
 }
 
 func (h *Hook) unsafeCalculateCapacity() float32 {
-
 	a := h.busyWorkers
 	b := h.totalWorkers
 	log.Infof("busy/total workers: %d/%d", a, b)
@@ -52,7 +51,7 @@ func (h *Hook) unsafeCalculateCapacity() float32 {
 	return capacity
 }
 
-func (h *Hook) OnStatus(req *pbt.Empty, stream pbt.Capacity_OnStatusServer) error {
+func (h *Hook) OnStatus(req *pbt.CapacityRequest, stream pbt.Capacity_OnStatusServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
@@ -105,8 +104,8 @@ out:
 	h.m.Unlock()
 	return err
 }
-func Create(s *grpc.Server) *Hook {
 
+func Create(s *grpc.Server) *Hook {
 	hook := &Hook{
 		busyWorkers:  0,
 		totalWorkers: 0,
